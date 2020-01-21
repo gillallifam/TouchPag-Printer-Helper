@@ -8,52 +8,86 @@ var removeAccents = require("remove-accents")
 var app = express();
 app.use(express.json())
 
+var stmp = '[{"id":61,"name":"PIZZA","value":22.55,"fileName":"pedipag_product_61.jpeg","quantity":29,"subcategory":{"id":23,"description":"Pizza","category":{"id":6,"description":"Lanches"}}},{"id":62,"name":"SUCO DE LARANJA","value":4.97,"fileName":"pedipag_product_62.jpeg","quantity":44,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":63,"name":"SUCO DE LIMÃO","value":5.04,"fileName":"pedipag_product_63.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":64,"name":"SUCO DE MARACUJÁ","value":5.06,"fileName":"pedipag_product_64.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":66,"name":"VITAMINA DE MAMÃO","value":5.07,"fileName":"pedipag_product_66.jpeg","quantity":47,"subcategory":{"id":33,"description":"Vitaminas","category":{"id":1,"description":"Bebidas"}}},{"id":72,"name":"INGRESSO ROCK IN RIO","value":750.09,"fileName":"pedipag_product_72.jpeg","quantity":8,"subcategory":{"id":26,"description":"Show","category":{"id":7,"description":"Ingressos"}}},{"id":90,"name":"GATORADE MORANGO","value":6.58,"fileName":"pedipag_product_90.webp","quantity":40,"subcategory":{"id":17,"description":"Diversos","category":{"id":1,"description":"Bebidas"}}},{"id":152,"name":"REI LEÃO","value":25.6,"fileName":"pedipag_product_152.jpg","quantity":43,"subcategory":{"id":27,"description":"Cinema","category":{"id":7,"description":"Ingressos"}}},{"id":155,"name":"CHEDDAR MCMELT","value":15.24,"fileName":"pedipag_product_155.jpeg","quantity":1,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":168,"name":"CHEDDAR TENTADOR","value":15.18,"fileName":"pedipag_product_168.jpg","quantity":41,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":175,"name":"BOLINHO DE BACALHAU","value":14.53,"fileName":"pedipag_product_175.jpg","quantity":41,"subcategory":{"id":20,"description":"Tira Gostos","category":{"id":5,"description":"Petiscos"}}},{"id":193,"name":"COXINHA","value":4.56,"fileName":"pedipag_product_193.jpg","quantity":48,"subcategory":{"id":19,"description":"Salgadinhos","category":{"id":2,"description":"Snacks"}}},{"id":198,"name":"IMPÉRIO","value":8.22,"fileName":"pedipag_product_198.webp","quantity":42,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":199,"name":"BUDWEISER","value":9.02,"fileName":"pedipag_product_199.webp","quantity":44,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":201,"name":"ITAIPAVA","value":7.14,"fileName":"pedipag_product_201.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":202,"name":"CORONA EXTRA","value":8.57,"fileName":"pedipag_product_202.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":203,"name":"HEINEKEN","value":9.52,"fileName":"pedipag_product_203.jpg","quantity":47,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":204,"name":"MOJITO DE MORANGO ","value":8.15,"fileName":"pedipag_product_204.jpg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":205,"name":"MOSCOW MULE ","value":12.22,"fileName":"pedipag_product_205.jpeg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":206,"name":"MARGARITA","value":14.65,"fileName":"pedipag_product_206.png","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":207,"name":"BALDE DE STELLA","value":50.68,"fileName":"pedipag_product_207.png","quantity":43,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}}]'
+console.log(stmp.split(",").join().split(":").join());
 var F_CUT = new Buffer.from([0x1d, 0x56, 0x00]) // Full cut paper
-
-var prtFunctions = {
-
-}
+var endString = "\n\n\n\n\n\n"  
 
 function publishPrinters() {
-    for (const prt of printer.getPrinters()) {
-        console.log(prt.name);
-        /* prtFunctions[prt.name] = function (prtName) {
-            console.log(prtName);
-        } */
-        app.post('/printer/' + prt.name, async function (req, res) {//todo mudar para post
-            //console.log("req",req.body);
-            res.send(await printTask(req.body));
-        });
+    for (const prt of printer.getPrinters()) { 
+        if (prt.options["printer-is-accepting-jobs"]) {
+            console.log(prt.name);
+            app.post('/printer/' + prt.name, async function (req, res) {
+                //console.log("Receive printer job");
+                //res.send("{status:success}")  
+                let rst = await printTask(prt.name, req.body)
+                console.log("Ticket " + req.body.name + " printed!");
+                //console.log("Print result: ", rst, req.body.name);
+                res.send({ status: rst });
+            });
+        }
     }
+    //console.log(app._router.stack);  
 }
 
-async function printTask(task) {
-    let items = task.items
-    let str = ""
-    str += pcmd.TXT_ALIGN_CT + pcmd.TXT_NORMAL + new Date().toISOString().
-        replace(/T/, ' ').
-        replace(/\..+/, '') + "\n\n"
-    str += "Pedido de producao\n\n"
-    str += pcmd.TXT_4SQUARE
-    str += task.name.toUpperCase() + "\n\n"
-    str += pcmd.TXT_BOLD_ON + 101 + pcmd.TXT_BOLD_OFF + "\n\n"
-    str += pcmd.TXT_ALIGN_LT + pcmd.TXT_2HEIGHT + pcmd.TXT_2WIDTH
-    for (let i = 0; i < items.length; i++) {
-        str += items[i].qnt + "\t" + items[i].name + "\n"
-    }
+publishPrinters()
 
-    printer.printDirect({
-        data: removeAccents(str) + "\n\n\n\n\n\n" + F_CUT,
-        type: 'RAW',
-        success: function (jobID) {
-            console.log("sent to printer with ID: " + jobID);
-            return "success"
+async function printTask(prtName, task) {
+    if (task.items) {
+        let items = task.items
+        let str = ""
+        let status = "error"
+        str += pcmd.TXT_ALIGN_CT + pcmd.TXT_NORMAL + new Date().toISOString().
+            replace(/T/, ' ').
+            replace(/\..+/, '') + "\n\n"
+        str += "Pedido em producao\n\n"
+        str += pcmd.TXT_4SQUARE
+        str += task.name.toUpperCase() + "\n\n"
+        str += pcmd.TXT_BOLD_ON + 101 + pcmd.TXT_BOLD_OFF + "\n\n"
+        str += pcmd.TXT_ALIGN_LT + pcmd.TXT_2HEIGHT + pcmd.TXT_2WIDTH
+        for (let i = 0; i < items.length; i++) {
+            str += items[i].qnt + "\t" + items[i].name + "\n"
         }
-        , error: function (err) {
-            console.log(err);
-            return "error"
-        }
-    })
+
+        //str = "teste\n"
+        result = await new Promise(r1 => {
+            printer.printDirect({
+                //data: prtName + ":" + str,
+                data: removeAccents(str) + endString + F_CUT,
+                type: 'RAW',
+                printer: prtName,
+                success: async function (jobID) {
+                    let maxTime = 5000
+                    let timePeriod = 1000
+                    let timeCounter = 0
+                    let interval = 200
+                    status = await new Promise(r2 => {
+                        setTimeout(() => {
+                            timeCounter += timePeriod
+                        }, timePeriod);
+                        let inter = setInterval(() => {
+                            let j = printer.getJob(prtName, jobID);
+                            if (j.status == "PRINTED") {
+                                clearInterval(inter)
+                                r2("success")
+                            }
+                            if (timeCounter >= maxTime) {
+                                clearInterval(inter)
+                                r2("fail")
+                            }
+                        }, interval);
+                    });
+                    r1(status)
+                }, error: function (err) {
+                    console.log("Error on printing: ", err);
+                    status = "error"
+                }
+            })
+        });
+        return result
+    } else {
+        return "notitems"
+    }
 }
 
 function printJSON(tsk) {
@@ -75,27 +109,6 @@ function printJSON(tsk) {
     });
 }
 
-async function printTaskXXXXXXxx(prtName) {
-    switch (prtName) {
-        case "Epson-B":
-            console.log(prtName);
-            //printString(prtName)
-            return prtName + " success!"
-        case "Epson-TM-BA-Thermal":
-            console.log(prtName);
-            //printString(prtName)
-            return prtName + " success!"
-        default:
-            break;
-    }
-}
-
-setTimeout(() => {
-    console.log(prtFunctions);
-}, 100);
-
-publishPrinters()
-
 app.get('/', function (req, res) {
     res.send('TPS');//TouchPag printer server
 });
@@ -103,9 +116,13 @@ app.get('/', function (req, res) {
 app.get('/listprinters', function (req, res) {
     let printers = []
     for (const prt of printer.getPrinters()) {
-        printers.push(prt.name)
+        if (prt.options["printer-is-accepting-jobs"]) {
+            p = { name: prt.name, status: prt.options["printer-is-accepting-jobs"] }
+            printers.push(p)
+        }
     }
-    res.send(printers.join("#"));
+    //console.log(printers);
+    res.send(printers);
 });
 
 app.post('/printString/', function (req, res) {
@@ -116,7 +133,6 @@ app.post('/printString/', function (req, res) {
 
 app.post('/printJSON/', function (req, res) {
     console.log("POST-printJSON", req.body.str);
-
     res.send("success");
 })
 
@@ -147,8 +163,6 @@ function table(data) {
     { text:"Center", align:"CENTER", width:0.25, bold:true },
     { text:"Right", align:"RIGHT", cols:8 }
   ]); */
-
-
 
 function printString(str) {
     printer.printDirect({
@@ -191,6 +205,7 @@ app.get('/test', function (req, res) {
 const port = 3536
 app.listen(port, function () {
     console.log('Server listening on port ' + port + '!');
+    console.log("-----------------------------");
 });
 
 
