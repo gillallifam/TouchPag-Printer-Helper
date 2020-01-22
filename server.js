@@ -1,25 +1,49 @@
 const printer = require('./lib/printer');
-//const ThermalPrinter = require("node-thermal-printer").printer;
-//const PrinterTypes = require("node-thermal-printer").types;
 var express = require('express');
 var removeAccents = require("remove-accents")
-//var multer = require('multer')
-//var upload = multer()
 var app = express();
 app.use(express.json())
+var strOrig = '[{"id":61,"name":"PIZZA","value":22.55,"fileName":"pedipag_product_61.jpeg","quantity":29,"subcategory":{"id":23,"description":"Pizza","category":{"id":6,"description":"Lanches"}}},{"id":62,"name":"SUCO DE LARANJA","value":4.97,"fileName":"pedipag_product_62.jpeg","quantity":44,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":63,"name":"SUCO DE LIMÃO","value":5.04,"fileName":"pedipag_product_63.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":64,"name":"SUCO DE MARACUJÁ","value":5.06,"fileName":"pedipag_product_64.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":66,"name":"VITAMINA DE MAMÃO","value":5.07,"fileName":"pedipag_product_66.jpeg","quantity":47,"subcategory":{"id":33,"description":"Vitaminas","category":{"id":1,"description":"Bebidas"}}},{"id":72,"name":"INGRESSO ROCK IN RIO","value":750.09,"fileName":"pedipag_product_72.jpeg","quantity":8,"subcategory":{"id":26,"description":"Show","category":{"id":7,"description":"Ingressos"}}},{"id":90,"name":"GATORADE MORANGO","value":6.58,"fileName":"pedipag_product_90.webp","quantity":40,"subcategory":{"id":17,"description":"Diversos","category":{"id":1,"description":"Bebidas"}}},{"id":152,"name":"REI LEÃO","value":25.6,"fileName":"pedipag_product_152.jpg","quantity":43,"subcategory":{"id":27,"description":"Cinema","category":{"id":7,"description":"Ingressos"}}},{"id":155,"name":"CHEDDAR MCMELT","value":15.24,"fileName":"pedipag_product_155.jpeg","quantity":1,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":168,"name":"CHEDDAR TENTADOR","value":15.18,"fileName":"pedipag_product_168.jpg","quantity":41,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":175,"name":"BOLINHO DE BACALHAU","value":14.53,"fileName":"pedipag_product_175.jpg","quantity":41,"subcategory":{"id":20,"description":"Tira Gostos","category":{"id":5,"description":"Petiscos"}}},{"id":193,"name":"COXINHA","value":4.56,"fileName":"pedipag_product_193.jpg","quantity":48,"subcategory":{"id":19,"description":"Salgadinhos","category":{"id":2,"description":"Snacks"}}},{"id":198,"name":"IMPÉRIO","value":8.22,"fileName":"pedipag_product_198.webp","quantity":42,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":199,"name":"BUDWEISER","value":9.02,"fileName":"pedipag_product_199.webp","quantity":44,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":201,"name":"ITAIPAVA","value":7.14,"fileName":"pedipag_product_201.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":202,"name":"CORONA EXTRA","value":8.57,"fileName":"pedipag_product_202.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":203,"name":"HEINEKEN","value":9.52,"fileName":"pedipag_product_203.jpg","quantity":47,"subcategory":{"id":1081,"description":"Cervejas","category":{"id":39,"description":"Bebidas"}}},{"id":204,"name":"MOJITO DE MORANGO ","value":8.15,"fileName":"pedipag_product_204.jpg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":205,"name":"MOSCOW MULE ","value":12.22,"fileName":"pedipag_product_205.jpeg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":206,"name":"MARGARITA","value":14.65,"fileName":"pedipag_product_206.png","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":207,"name":"BALDE DE STELLA","value":50.68,"fileName":"pedipag_product_207.png","quantity":43,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}}]'
+var stmp = strOrig.replace(/{/g, '');
+stmp = stmp.replace(/}/g, '');
+stmp = stmp.replace(/:/g, ',');
+stmp = stmp.split(',').join(" ")
+var strcompressed = strOrig
+var counts = wordFrequency(stmp)
+var sortedWords = Object.keys(counts).sort((a, b) => { return b.length - a.length })
+var pos = 0
+var dict = {}
+var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+console.time("comp")
+for (const k of sortedWords) {
+    if (counts[k] > 3 && k.length > 2) {
+        dict[k] = '§' + chars.charAt(pos)
+        strcompressed = strcompressed.split(k).join('§' + chars.charAt(pos))
+        pos++
+    }
+}
+console.timeEnd("comp")
 
-var stmp = '[{"id":61,"name":"PIZZA","value":22.55,"fileName":"pedipag_product_61.jpeg","quantity":29,"subcategory":{"id":23,"description":"Pizza","category":{"id":6,"description":"Lanches"}}},{"id":62,"name":"SUCO DE LARANJA","value":4.97,"fileName":"pedipag_product_62.jpeg","quantity":44,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":63,"name":"SUCO DE LIMÃO","value":5.04,"fileName":"pedipag_product_63.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":64,"name":"SUCO DE MARACUJÁ","value":5.06,"fileName":"pedipag_product_64.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":66,"name":"VITAMINA DE MAMÃO","value":5.07,"fileName":"pedipag_product_66.jpeg","quantity":47,"subcategory":{"id":33,"description":"Vitaminas","category":{"id":1,"description":"Bebidas"}}},{"id":72,"name":"INGRESSO ROCK IN RIO","value":750.09,"fileName":"pedipag_product_72.jpeg","quantity":8,"subcategory":{"id":26,"description":"Show","category":{"id":7,"description":"Ingressos"}}},{"id":90,"name":"GATORADE MORANGO","value":6.58,"fileName":"pedipag_product_90.webp","quantity":40,"subcategory":{"id":17,"description":"Diversos","category":{"id":1,"description":"Bebidas"}}},{"id":152,"name":"REI LEÃO","value":25.6,"fileName":"pedipag_product_152.jpg","quantity":43,"subcategory":{"id":27,"description":"Cinema","category":{"id":7,"description":"Ingressos"}}},{"id":155,"name":"CHEDDAR MCMELT","value":15.24,"fileName":"pedipag_product_155.jpeg","quantity":1,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":168,"name":"CHEDDAR TENTADOR","value":15.18,"fileName":"pedipag_product_168.jpg","quantity":41,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":175,"name":"BOLINHO DE BACALHAU","value":14.53,"fileName":"pedipag_product_175.jpg","quantity":41,"subcategory":{"id":20,"description":"Tira Gostos","category":{"id":5,"description":"Petiscos"}}},{"id":193,"name":"COXINHA","value":4.56,"fileName":"pedipag_product_193.jpg","quantity":48,"subcategory":{"id":19,"description":"Salgadinhos","category":{"id":2,"description":"Snacks"}}},{"id":198,"name":"IMPÉRIO","value":8.22,"fileName":"pedipag_product_198.webp","quantity":42,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":199,"name":"BUDWEISER","value":9.02,"fileName":"pedipag_product_199.webp","quantity":44,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":201,"name":"ITAIPAVA","value":7.14,"fileName":"pedipag_product_201.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":202,"name":"CORONA EXTRA","value":8.57,"fileName":"pedipag_product_202.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":203,"name":"HEINEKEN","value":9.52,"fileName":"pedipag_product_203.jpg","quantity":47,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":204,"name":"MOJITO DE MORANGO ","value":8.15,"fileName":"pedipag_product_204.jpg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":205,"name":"MOSCOW MULE ","value":12.22,"fileName":"pedipag_product_205.jpeg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":206,"name":"MARGARITA","value":14.65,"fileName":"pedipag_product_206.png","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":207,"name":"BALDE DE STELLA","value":50.68,"fileName":"pedipag_product_207.png","quantity":43,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}}]'
-console.log(stmp.split(",").join().split(":").join());
-var F_CUT = new Buffer.from([0x1d, 0x56, 0x00]) // Full cut paper
-var endString = "\n\n\n\n\n\n"  
+console.log(dict, Object.keys(dict).length);
+console.log(strcompressed);
+var uncompressed = strcompressed
+console.time("uncomp")
+for (const [key, value] of Object.entries(dict)) {
+    uncompressed = uncompressed.split(value).join(key)
+    //console.log(key, value);
+}
+console.timeEnd("uncomp")
+console.log("UNNNN");
+console.log(uncompressed);
+var F_CUT = new Buffer.from([0x1d, 0x56, 0x00]) // Full cut paper  
+var endString = "\n\n\n\n\n\n"
 
 function publishPrinters() {
-    for (const prt of printer.getPrinters()) { 
+    for (const prt of printer.getPrinters()) {
         if (prt.options["printer-is-accepting-jobs"]) {
             console.log(prt.name);
             app.post('/printer/' + prt.name, async function (req, res) {
-                //console.log("Receive printer job");
-                //res.send("{status:success}")  
+                //res.send("{status:success}") 
                 let rst = await printTask(prt.name, req.body)
                 console.log("Ticket " + req.body.name + " printed!");
                 //console.log("Print result: ", rst, req.body.name);
@@ -28,6 +52,40 @@ function publishPrinters() {
         }
     }
     //console.log(app._router.stack);  
+}
+
+function wordFrequency(string) {
+
+    /* Below is a regular expression that finds alphanumeric characters
+       Next is a string that could easily be replaced with a reference to a form control
+       Lastly, we have an array that will hold any words matching our pattern */
+    var pattern = /\w+/g,
+        matchedWords = string.match(pattern);
+
+    /* The Array.prototype.reduce method assists us in producing a single value from an
+       array. In this case, we're going to use it to output an object with results. */
+    var counts = matchedWords.reduce(function (stats, word) {
+
+        /* `stats` is the object that we'll be building up over time.
+           `word` is each individual entry in the `matchedWords` array */
+        if (stats[word]) {
+            /* `stats` already has an entry for the current `word`.
+               As a result, let's increment the count for that `word`. */
+            stats[word] = stats[word] + 1;
+        } else {
+            /* `stats` does not yet have an entry for the current `word`.
+               As a result, let's add a new entry, and set count to 1. */
+            stats[word] = 1;
+        }
+
+        /* Because we are building up `stats` over numerous iterations,
+           we need to return it for the next pass to modify it. */
+        return stats;
+
+    }, {});
+
+    return counts
+
 }
 
 publishPrinters()
@@ -49,33 +107,29 @@ async function printTask(prtName, task) {
             str += items[i].qnt + "\t" + items[i].name + "\n"
         }
 
-        //str = "teste\n"
         result = await new Promise(r1 => {
             printer.printDirect({
-                //data: prtName + ":" + str,
                 data: removeAccents(str) + endString + F_CUT,
                 type: 'RAW',
                 printer: prtName,
                 success: async function (jobID) {
-                    let maxTime = 5000
-                    let timePeriod = 1000
-                    let timeCounter = 0
-                    let interval = 200
+                    let maxTime = 30000
+                    let interval = 250
                     status = await new Promise(r2 => {
-                        setTimeout(() => {
-                            timeCounter += timePeriod
-                        }, timePeriod);
                         let inter = setInterval(() => {
                             let j = printer.getJob(prtName, jobID);
                             if (j.status == "PRINTED") {
                                 clearInterval(inter)
+                                clearTimeout(timer)
                                 r2("success")
                             }
-                            if (timeCounter >= maxTime) {
-                                clearInterval(inter)
-                                r2("fail")
-                            }
                         }, interval);
+                        let timer = setTimeout(() => {
+                            console.log("Timeout on printing in: " + task.name);
+                            clearInterval(inter)
+                            printer.setJob(prtName, jobID, "CANCEL")
+                            r2("fail")
+                        }, maxTime);
                     });
                     r1(status)
                 }, error: function (err) {
