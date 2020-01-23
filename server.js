@@ -4,23 +4,26 @@ var removeAccents = require("remove-accents")
 var app = express();
 app.use(express.json())
 var strOrig = '[{"id":61,"name":"PIZZA","value":22.55,"fileName":"pedipag_product_61.jpeg","quantity":29,"subcategory":{"id":23,"description":"Pizza","category":{"id":6,"description":"Lanches"}}},{"id":62,"name":"SUCO DE LARANJA","value":4.97,"fileName":"pedipag_product_62.jpeg","quantity":44,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":63,"name":"SUCO DE LIMÃO","value":5.04,"fileName":"pedipag_product_63.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":64,"name":"SUCO DE MARACUJÁ","value":5.06,"fileName":"pedipag_product_64.jpeg","quantity":47,"subcategory":{"id":4,"description":"Sucos","category":{"id":1,"description":"Bebidas"}}},{"id":66,"name":"VITAMINA DE MAMÃO","value":5.07,"fileName":"pedipag_product_66.jpeg","quantity":47,"subcategory":{"id":33,"description":"Vitaminas","category":{"id":1,"description":"Bebidas"}}},{"id":72,"name":"INGRESSO ROCK IN RIO","value":750.09,"fileName":"pedipag_product_72.jpeg","quantity":8,"subcategory":{"id":26,"description":"Show","category":{"id":7,"description":"Ingressos"}}},{"id":90,"name":"GATORADE MORANGO","value":6.58,"fileName":"pedipag_product_90.webp","quantity":40,"subcategory":{"id":17,"description":"Diversos","category":{"id":1,"description":"Bebidas"}}},{"id":152,"name":"REI LEÃO","value":25.6,"fileName":"pedipag_product_152.jpg","quantity":43,"subcategory":{"id":27,"description":"Cinema","category":{"id":7,"description":"Ingressos"}}},{"id":155,"name":"CHEDDAR MCMELT","value":15.24,"fileName":"pedipag_product_155.jpeg","quantity":1,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":168,"name":"CHEDDAR TENTADOR","value":15.18,"fileName":"pedipag_product_168.jpg","quantity":41,"subcategory":{"id":35,"description":"Lanches e Bebidas","category":{"id":8,"description":"Combos"}}},{"id":175,"name":"BOLINHO DE BACALHAU","value":14.53,"fileName":"pedipag_product_175.jpg","quantity":41,"subcategory":{"id":20,"description":"Tira Gostos","category":{"id":5,"description":"Petiscos"}}},{"id":193,"name":"COXINHA","value":4.56,"fileName":"pedipag_product_193.jpg","quantity":48,"subcategory":{"id":19,"description":"Salgadinhos","category":{"id":2,"description":"Snacks"}}},{"id":198,"name":"IMPÉRIO","value":8.22,"fileName":"pedipag_product_198.webp","quantity":42,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":199,"name":"BUDWEISER","value":9.02,"fileName":"pedipag_product_199.webp","quantity":44,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":201,"name":"ITAIPAVA","value":7.14,"fileName":"pedipag_product_201.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":202,"name":"CORONA EXTRA","value":8.57,"fileName":"pedipag_product_202.webp","quantity":45,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}},{"id":203,"name":"HEINEKEN","value":9.52,"fileName":"pedipag_product_203.jpg","quantity":47,"subcategory":{"id":1081,"description":"Cervejas","category":{"id":39,"description":"Bebidas"}}},{"id":204,"name":"MOJITO DE MORANGO ","value":8.15,"fileName":"pedipag_product_204.jpg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":205,"name":"MOSCOW MULE ","value":12.22,"fileName":"pedipag_product_205.jpeg","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":206,"name":"MARGARITA","value":14.65,"fileName":"pedipag_product_206.png","quantity":50,"subcategory":{"id":30,"description":"Drinks","category":{"id":1,"description":"Bebidas"}}},{"id":207,"name":"BALDE DE STELLA","value":50.68,"fileName":"pedipag_product_207.png","quantity":43,"subcategory":{"id":3,"description":"Cervejas","category":{"id":1,"description":"Bebidas"}}}]'
+strOrig = strOrig.replace(/:([0-9]+([.,][0-9]+)?)/g, ':"$1"');
+console.log("Orig: ", strOrig);
 var stmp = strOrig.replace(/{/g, '');
 stmp = stmp.replace(/}/g, '');
 stmp = stmp.replace(/:/g, ',');
 stmp = stmp.split(',').join(" ")
 var strcompressed = strOrig
-var counts = wordFrequency(stmp)
+var counts = wordFrequency(stmp) 
+//var sortedWords = Object.keys(counts).sort((a, b) => { return b.length - a.length })
 var sortedWords = Object.keys(counts).sort((a, b) => { return b.length - a.length })
 var pos = 0
 var dict = {}
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 console.time("comp")
 for (const k of sortedWords) {
-    if (counts[k] > 3 && k.length > 2) {
+    if (counts[k] > 3 && k.length > 2) { 
         dict[k] = '§' + chars.charAt(pos)
         strcompressed = strcompressed.split(k).join('§' + chars.charAt(pos))
-        pos++
-    }
+        pos++  
+    } 
 }
 console.timeEnd("comp")
 
