@@ -55,6 +55,7 @@
     "multer": "^1.4.2",
     "nan": "^2.14.0",
     "node-gyp": "^6.1.0",
+    "node-localstorage": "^2.1.5",
     "node-pre-gyp": "^0.14.0",
     "nodemon": "^2.0.2",
     "remove-accents": "^0.4.2",

@@ -2,42 +2,32 @@ const printer = require('./lib/printer');
 var express = require('express');
 var removeAccents = require("remove-accents")
 var dateFormat = require('dateformat');
+var LocalStorage = require('node-localstorage').LocalStorage;
+localStorage = new LocalStorage('./svStorage');
 var app = express();
 app.use(express.json())
+
+//localStorage.setItem('myFirstKey', 'myFirstValue');
+//localStorage.clear()
+//console.log(localStorage.getItem('myFirstKey') || "getDefault");
 
 var F_CUT = new Buffer.from([0x1d, 0x56, 0x00]) // Full cut paper  
 var endString = "\n\n\n\n\n\n"
 
 function publishPrinters() {
     for (const prt of printer.getPrinters()) {
-        //console.log(prt);
         if (prt.options["printer-is-accepting-jobs"]) {
             console.log(prt.name);
             app.post('/printer/' + prt.name, async function (req, res) {
-                //res.send("{status:success}") 
                 let rst = await printTask(prt.name, req.body)
                 console.log("Ticket " + req.body.name + " printed!");
                 res.send({ local: req.body.name, status: rst });
             });
         }
     }
-    /* app.post('/printer/entrega' , async function (req, res) {
-        let rst = await printTask(entrega, req.body)
-        console.log("Ticket entrega printed!");
-        res.send({ local: "entrega", status: rst });
-    }); */
-    //console.log(app._router.stack);  
 }
 
 publishPrinters()
-
-/* app.post('/printer/entrega', async function (req, res) {
-    let rst = await printTask("Epson-Entrega", req.body)
-    console.log("Ticket entrega printed!"); 
-    res.send({ status: rst });
-}); */
-
-//console.log(dateFormat(new Date(),"dd/mm/yyyy HH:MM:ss"));
 
 async function printTask(prtName, task) {
     if (task.items) {
