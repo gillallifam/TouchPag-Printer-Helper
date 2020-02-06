@@ -17,7 +17,6 @@
     "dateformat": "^3.0.3",
     "express": "^4.17.1",
     "node-localstorage": "^2.1.5",
-    "nodemon": "^2.0.2",
     "printer": "git+https://github.com/tojocky/node-printer.git",
     "remove-accents": "^0.4.2"
   }

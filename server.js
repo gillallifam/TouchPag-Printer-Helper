@@ -18,11 +18,11 @@ function publishPrinters() {
     //console.log(printer.getPrinters());
     for (const prt of printer.getPrinters()) {
         console.log(prt.name);
-            app.post('/printer/' + prt.name, async function (req, res) {
-                let rst = await printTask(prt.name, req.body)
-                console.log("Ticket " + req.body.name + " printed!");
-                res.send({ local: req.body.name, status: rst });
-            });
+        app.post('/printer/' + prt.name, async function (req, res) {
+            let rst = await printTask(prt.name, req.body)
+            console.log("Ticket: " + rst);
+            res.send({ local: req.body.name, status: rst });
+        });
     }
 }
 
@@ -33,9 +33,7 @@ async function printTask(prtName, task) {
         let items = task.items
         let str = ""
         let status = "error"
-        str += pcmd.TXT_ALIGN_CT + pcmd.TXT_NORMAL + dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss").
-            replace(/T/, ' ').
-            replace(/\..+/, '') + "\n\n"
+        str += pcmd.TXT_ALIGN_CT + pcmd.TXT_NORMAL + dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + "\n\n"
         str += "Pedido em producao\n\n"
         str += pcmd.TXT_4SQUARE
         str += task.name.toUpperCase() + "\n\n"
@@ -55,28 +53,32 @@ async function printTask(prtName, task) {
                 type: 'RAW',
                 printer: prtName,
                 success: async function (jobID) {
-                    let maxTime = 30000
-                    let interval = 250
+                    let maxTime = 15000
+                    let interval = 1
                     status = await new Promise(r2 => {
-                        let inter = setInterval(() => {
-                            let j = printer.getJob(prtName, jobID);
-                            if (j.status == "PRINTED") {
-                                clearInterval(inter)
-                                clearTimeout(timer)
-                                r2("success")
-                            }
-                        }, interval);
                         let timer = setTimeout(() => {
                             console.log("Timeout on printing in: " + task.name);
-                            clearInterval(inter)
                             printer.setJob(prtName, jobID, "CANCEL")
                             r2("fail")
                         }, maxTime);
+
+                        let inter = setInterval(() => {
+                            try {
+                                //console.log(printer.getJob(prtName, jobID));
+                                printer.getJob(prtName, jobID).status
+                            } catch (error) {
+                                clearInterval(inter)
+                                clearTimeout(timer)
+                                r2("success")
+                                console.log("Job finished: " + jobID);
+                            }
+                        }, interval);
                     });
                     r1(status)
                 }, error: function (err) {
                     console.log("Error on printing: ", err);
                     status = "error"
+                    r1(status)
                 }
             })
         });
@@ -93,12 +95,9 @@ app.get('/', function (req, res) {
 app.get('/listprinters', function (req, res) {
     let printers = []
     for (const prt of printer.getPrinters()) {
-        if (prt.options["printer-is-accepting-jobs"]) {
-            p = { name: prt.name, status: prt.options["printer-is-accepting-jobs"] }
-            printers.push(p)
-        }
+        p = { name: prt.name, status: true }
+        printers.push(p)
     }
-    //console.log(printers);
     res.send(printers);
 });
 
@@ -113,26 +112,6 @@ app.post('/printJSON/', function (req, res) {
     res.send("success");
 })
 
-function table(data) {
-    let cellWidth = 5;
-    let str = "" + pcmd.TXT_ALIGN_LT
-    for (var i = 0; i < data.length; i++) {
-        str += data[i].toString();
-        var spaces = cellWidth - data[i].toString().length;
-        for (var j = 0; j < spaces; j++) {
-            str += new Buffer.from(" ");
-        }
-    }
-    printer.printDirect({
-        data: str + "\n\n\n\n\n\n" + F_CUT,
-        type: 'RAW',
-        success: function (jobID) {
-            console.log("sent to printer with ID: " + jobID);
-        }
-        , error: function (err) { console.log(err); }
-    });
-}
-
 function printString(str) {
     printer.printDirect({
         data: str + "\n\n\n\n\n\n" + F_CUT,
@@ -144,49 +123,11 @@ function printString(str) {
     });
 }
 
-app.get('/test', function (req, res) {
-    var numeroPedido = 101
-    var tstString = `${pcmd.CHARCODE_LATINA}
-    ${pcmd.TXT_2HEIGHT}PEDIDO DE PRODUCAO\n
-    ${pcmd.TXT_4SQUARE}${pcmd.TXT_ALIGN_CT} 
-    COZINHA\n    
-    ${pcmd.TXT_4SQUARE}
-    ${pcmd.TXT_BOLD_ON}${numeroPedido}${pcmd.TXT_BOLD_OFF}\n\n
-    ${pcmd.TXT_2HEIGHT}${pcmd.TXT_ALIGN_LT}
-    1\t TAPIOCA GRANDE\n
-    2\t CAFE COM LEITE\n
-`
-    printString(tstString)
-    res.send("See printer");
-});
 const port = 3536
 app.listen(port, function () {
     console.log('Server listening on port ' + port + '!');
     console.log("-----------------------------");
 });
-
-/* app.get('/testfile', function (req, res) {
-    printer.printFile({
-        filename: "tst.txt",
-        success: function (jobID) {
-            console.log("sent to printer with ID: " + jobID);
-        },
-        error: function (err) {
-            console.log(err);
-        }
-    });
-    res.send("See printer");
-}); */
-
-//table(["One", "Two", "Three"]);
-//table(["Um", "Dois", "Tres"]);
-/* printer.tableCustom([                                       // Prints table with custom settings (text, align, width, cols, bold)
-    { text:"Left", align:"LEFT", width:0.5 },
-    { text:"Center", align:"CENTER", width:0.25, bold:true },
-    { text:"Right", align:"RIGHT", cols:8 }
-  ]); */
-
-
 
 var pcmd = {
     // Feed control sequences
@@ -204,10 +145,6 @@ var pcmd = {
     BEEP: new Buffer.from([0x1b, 0x1e]),              // Sounds built-in buzzer (if equipped)
     UPSIDE_DOWN_ON: new Buffer.from([0x1b, 0x7b, 0x01]),     // Upside down printing ON (rotated 180 degrees).
     UPSIDE_DOWN_OFF: new Buffer.from([0x1b, 0x7b, 0x00]),     // Upside down printing OFF (default).
-
-    // Cash Drawer
-    CD_KICK_2: new Buffer.from([0x1b, 0x70, 0x00]),      // Sends a pulse to pin 2 []
-    CD_KICK_5: new Buffer.from([0x1b, 0x70, 0x01]),      // Sends a pulse to pin 5 []
 
     // Paper
     PAPER_FULL_CUT: new Buffer.from([0x1d, 0x56, 0x00]), // Full cut paper
@@ -231,78 +168,6 @@ var pcmd = {
     TXT_ALIGN_CT: new Buffer.from([0x1b, 0x61, 0x01]), // Centering
     TXT_ALIGN_RT: new Buffer.from([0x1b, 0x61, 0x02]), // Right justification
 
-    // Char code table
-    CHARCODE_USA: new Buffer.from([0x1b, 0x52, 0x00]), // USA
-    CHARCODE_FRANCE: new Buffer.from([0x1b, 0x52, 0x01]), // France
-    CHARCODE_GERMANY: new Buffer.from([0x1b, 0x52, 0x02]), // Germany
-    CHARCODE_UK: new Buffer.from([0x1b, 0x52, 0x03]), // U.K.
-    CHARCODE_DENMARK1: new Buffer.from([0x1b, 0x52, 0x04]), // Denmark I
-    CHARCODE_SWEDEN: new Buffer.from([0x1b, 0x52, 0x05]), // Sweden
-    CHARCODE_ITALY: new Buffer.from([0x1b, 0x52, 0x06]), // Italy
-    CHARCODE_SPAIN1: new Buffer.from([0x1b, 0x52, 0x07]), // Spain I
-    CHARCODE_JAPAN: new Buffer.from([0x1b, 0x52, 0x08]), // Japan
-    CHARCODE_NORWAY: new Buffer.from([0x1b, 0x52, 0x09]), // Norway
-    CHARCODE_DENMARK2: new Buffer.from([0x1b, 0x52, 0x0A]), // Denmark II
-    CHARCODE_SPAIN2: new Buffer.from([0x1b, 0x52, 0x0B]), // Spain II
-    CHARCODE_LATINA: new Buffer.from([0x1b, 0x74, 0x12]), // Latin America
-    CHARCODE_KOREA: new Buffer.from([0x1b, 0x52, 0x0D]), // Korea
-    CHARCODE_SLOVENIA: new Buffer.from([0x1b, 0x52, 0x0E]), // Slovenia
-    CHARCODE_CHINA: new Buffer.from([0x1b, 0x52, 0x0F]), // China
-    CHARCODE_VIETNAM: new Buffer.from([0x1b, 0x52, 0x10]), // Vietnam
-    CHARCODE_ARABIA: new Buffer.from([0x1b, 0x52, 0x11]), // ARABIA
-
-
-    // Barcode format
-    BARCODE_TXT_OFF: new Buffer.from([0x1d, 0x48, 0x00]), // HRI barcode chars OFF
-    BARCODE_TXT_ABV: new Buffer.from([0x1d, 0x48, 0x01]), // HRI barcode chars above
-    BARCODE_TXT_BLW: new Buffer.from([0x1d, 0x48, 0x02]), // HRI barcode chars below
-    BARCODE_TXT_BTH: new Buffer.from([0x1d, 0x48, 0x03]), // HRI barcode chars both above and below
-    BARCODE_FONT_A: new Buffer.from([0x1d, 0x66, 0x00]), // Font type A for HRI barcode chars
-    BARCODE_FONT_B: new Buffer.from([0x1d, 0x66, 0x01]), // Font type B for HRI barcode chars
-    BARCODE_HEIGHT: new Buffer.from([0x1d, 0x68, 0x64]), // Barcode Height [1-255]
-    BARCODE_WIDTH: new Buffer.from([0x1d, 0x77, 0x03]), // Barcode Width  [2-6]
-    BARCODE_UPC_A: new Buffer.from([0x1d, 0x6b, 0x00]), // Barcode type UPC-A
-    BARCODE_UPC_E: new Buffer.from([0x1d, 0x6b, 0x01]), // Barcode type UPC-E
-    BARCODE_EAN13: new Buffer.from([0x1d, 0x6b, 0x02]), // Barcode type EAN13
-    BARCODE_EAN8: new Buffer.from([0x1d, 0x6b, 0x03]), // Barcode type EAN8
-    BARCODE_CODE39: new Buffer.from([0x1d, 0x6b, 0x04]), // Barcode type CODE39
-    BARCODE_ITF: new Buffer.from([0x1d, 0x6b, 0x05]), // Barcode type ITF
-    BARCODE_NW7: new Buffer.from([0x1d, 0x6b, 0x06]), // Barcode type NW7
-
-    //BARCODE_CODE128
-
-    // BARCODE_CODE128  : new Buffer.from([0x1d, 0x6b, 0x04]), // Barcode type CODE39
-    BARCODE_CODE128_TEXT_1: new Buffer.from([0x1d, 0x48, 1]), // printer data above the bar code
-    BARCODE_CODE128_TEXT_2: new Buffer.from([0x1d, 0x48, 2]), // printer data below the bar code
-    BARCODE_CODE128_TEXT_3: new Buffer.from([0x1d, 0x48, 3]), // printer data both above and below the bar code
-
-    // QR Code
-    QRCODE_MODEL1: new Buffer.from([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x31, 0x00]), // Model 1
-    QRCODE_MODEL2: new Buffer.from([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]), // Model 2
-    QRCODE_MODEL3: new Buffer.from([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x33, 0x00]), // Model 3
-
-    QRCODE_CORRECTION_L: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x30]), // Correction level: L - 7%
-    QRCODE_CORRECTION_M: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x31]), // Correction level: M - 15%
-    QRCODE_CORRECTION_Q: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x32]), // Correction level: Q - 25%
-    QRCODE_CORRECTION_H: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x33]), // Correction level: H - 30%
-
-    QRCODE_CELLSIZE_1: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x01]),   // Cell size 1
-    QRCODE_CELLSIZE_2: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x02]),   // Cell size 2
-    QRCODE_CELLSIZE_3: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x03]),   // Cell size 3
-    QRCODE_CELLSIZE_4: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x04]),   // Cell size 4
-    QRCODE_CELLSIZE_5: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x05]),   // Cell size 5
-    QRCODE_CELLSIZE_6: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x06]),   // Cell size 6
-    QRCODE_CELLSIZE_7: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x07]),   // Cell size 7
-    QRCODE_CELLSIZE_8: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x08]),   // Cell size 8
-
-    QRCODE_PRINT: new Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]),        // Print QR code
-
-
-    // Image format
-    S_RASTER_N: new Buffer.from([0x1d, 0x76, 0x30, 0x00]), // Set raster image normal size
-    S_RASTER_2W: new Buffer.from([0x1d, 0x76, 0x30, 0x01]), // Set raster image double width
-    S_RASTER_2H: new Buffer.from([0x1d, 0x76, 0x30, 0x02]), // Set raster image double height
-    S_RASTER_Q: new Buffer.from([0x1d, 0x76, 0x30, 0x03]), // Set raster image quadruple
 
     // Printing Density
     PD_N50: new Buffer.from([0x1d, 0x7c, 0x00]), // Printing Density -50%
