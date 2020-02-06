@@ -15,17 +15,14 @@ var F_CUT = new Buffer.from([0x1d, 0x56, 0x00]) // Full cut paper
 var endString = "\n\n\n\n\n\n"
 
 function publishPrinters() {
-    console.log(printer.getPrinters());
+    //console.log(printer.getPrinters());
     for (const prt of printer.getPrinters()) {
-        //console.log(prt);
-        //if (prt.options["printer-is-accepting-jobs"]) {
-            //console.log(prt); 
+        console.log(prt.name);
             app.post('/printer/' + prt.name, async function (req, res) {
                 let rst = await printTask(prt.name, req.body)
                 console.log("Ticket " + req.body.name + " printed!");
                 res.send({ local: req.body.name, status: rst });
             });
-        //}
     }
 }
 
