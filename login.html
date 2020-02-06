@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Login</h1>
+    <script>
+        function getHash(str, algo = "SHA-256") {
+            let strBuf = new TextEncoder('utf-8').encode(str);
+            return crypto.subtle.digest(algo, strBuf)
+                .then(hash => {
+                    window.hash = hash;
+                    let result = '';
+                    const view = new DataView(hash);
+                    for (let i = 0; i < hash.byteLength; i += 4) {
+                        result += ('00000000' + view.getUint32(i).toString(16)).slice(-8);
+                    }
+                    return result;
+                });
+        }
+
+        async function doLogin(pass) {
+            let hsh = await getHash(pass)
+            const url = "/verify";
+            let rsp = await fetch(url, {
+                method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: "Gill", pass: hsh })
+            })
+            let rst = await rsp.text()
+            console.log(rst);
+        }
+        doLogin("TpsGoiano")
+    </script>
+</body>
+
+</html>

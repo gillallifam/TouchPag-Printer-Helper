@@ -6,7 +6,9 @@ var LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./svStorage');
 var app = express();
 app.use(express.json())
+//pass =  TpsGoiano
 
+//console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss"));
 //localStorage.setItem('myFirstKey', 'myFirstValue');
 //localStorage.clear()
 //console.log(localStorage.getItem('myFirstKey') || "getDefault");
@@ -68,7 +70,7 @@ async function printTask(prtName, task) {
                             }
                         }, interval);
                         let timer = setTimeout(() => {
-                            console.log("Timeout on printing in: " + task.name);
+                            console.log("Timeout printing on: " + task.name);
                             clearInterval(inter)
                             printer.setJob(prtName, jobID, "CANCEL")
                             r2("fail")
@@ -90,6 +92,22 @@ async function printTask(prtName, task) {
 app.get('/', function (req, res) {
     res.send('TPS');//TouchPag printer server
 });
+
+app.get('/login', function (req, res) {
+    console.log(req.query.name);
+    console.log(req.query.hash);
+    res.sendFile(__dirname + '/login.html');
+});
+
+app.post('/verify', async function (req, res) {
+    console.log(req.body);
+    if (req.body.pass === "b07a4bfef4f6b5b7ec6e7227137c6ba90ab3e8d71598cd84a6b802976495b923") {
+        res.send("success")
+    }
+    res.send("fail");
+});
+
+app.delete("/deletify/")
 
 app.get('/listprinters', function (req, res) {
     let printers = []
@@ -165,6 +183,9 @@ app.listen(port, function () {
     console.log('Server listening on port ' + port + '!');
     console.log("-----------------------------");
 });
+
+//console.log(app._router.stack[9]);
+//app._router.stack.splice(9, 1);
 
 /* app.get('/testfile', function (req, res) {
     printer.printFile({

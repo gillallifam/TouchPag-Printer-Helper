@@ -1,0 +1,6 @@
+(Requer internet)
+Abrir a pasta no console.
+Entrar com os comandos: npm install
+Esperar a instalaçao.
+Executar npm run dev para iniciar o servidor.
+
