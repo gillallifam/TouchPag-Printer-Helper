@@ -20,7 +20,7 @@ function publishPrinters() {
         console.log(prt.name);
         app.post('/printer/' + prt.name, async function (req, res) {
             let rst = await printTask(prt.name, req.body)
-            console.log("Ticket: " + rst);
+            console.log("Name: " + req.body.name + "order: " + req.body.orderId + "status: " + rst);
             res.send({ local: req.body.name, status: rst });
         });
     }
@@ -33,12 +33,12 @@ async function printTask(prtName, task) {
         let items = task.items
         let str = ""
         let status = "error"
-        str += pcmd.TXT_ALIGN_CT + pcmd.TXT_NORMAL + dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + "\n\n"
+        str += pc.TXT_ALIGN_CT + pc.TXT_NORMAL + dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss") + "\n\n"
         str += "Pedido em producao\n\n"
-        str += pcmd.TXT_4SQUARE
+        str += pc.TXT_4SQUARE
         str += task.name.toUpperCase() + "\n\n"
-        str += pcmd.TXT_BOLD_ON + task.orderId + pcmd.TXT_BOLD_OFF + "\n\n"
-        str += pcmd.TXT_ALIGN_LT + pcmd.TXT_2HEIGHT + pcmd.TXT_2WIDTH
+        str += pc.TXT_BOLD_ON + task.orderId + pc.TXT_BOLD_OFF + "\n\n"
+        str += pc.TXT_ALIGN_LT + pc.TXT_2HEIGHT + pc.TXT_2WIDTH
         for (let i = 0; i < items.length; i++) {
             str += items[i].qnt + "\t" + items[i].name + "\n"
             if (items[i].obs && task.name != "entrega") {
@@ -129,7 +129,7 @@ app.listen(port, function () {
     console.log("-----------------------------");
 });
 
-var pcmd = {
+var pc = {
     // Feed control sequences
     CTL_LF: new Buffer.from([0x0a]),              // Print and line feed
     CTL_FF: new Buffer.from([0x0c]),              // Form feed
