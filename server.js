@@ -7,6 +7,14 @@ localStorage = new LocalStorage('./svStorage');
 var app = express();
 app.use(express.json())
 //pass =  TpsGoiano
+var version = "linux"
+
+if (version != process.platform) { 
+    console.log(process.platform, version);
+    //process.exitCode = 1;
+    throw Error("Using wrong version")
+}
+
 
 //console.log(dateFormat(new Date(), "dd/mm/yyyy HH:MM:ss"));
 //localStorage.setItem('myFirstKey', 'myFirstValue');
@@ -22,7 +30,7 @@ function publishPrinters() {
             console.log(prt.name);
             app.post('/printer/' + prt.name, async function (req, res) {
                 let rst = await printTask(prt.name, req.body)
-                console.log("Ticket " + req.body.name + " printed!");
+                console.log("Pedido: " + req.body.orderId + " impresso em " + req.body.name + " status: " + rst);
                 res.send({ local: req.body.name, status: rst });
             });
         }
