@@ -1,4 +1,5 @@
-const printer = require('./lib/printer');
+//const printer = require('./lib/printer');
+const printer = require('./node_modules/printer/lib/printer');
 var express = require('express');
 var removeAccents = require("remove-accents")
 var dateFormat = require('dateformat');
@@ -159,6 +160,7 @@ function table(data) {
         , error: function (err) { console.log(err); }
     });
 }
+
 
 function printString(str) {
     printer.printDirect({
