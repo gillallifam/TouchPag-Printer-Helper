@@ -23,7 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "dateformat": "^3.0.3",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "nan": "^2.14.0",
     "node-localstorage": "^2.1.5",
     "printer": "git+https://github.com/tojocky/node-printer.git",
